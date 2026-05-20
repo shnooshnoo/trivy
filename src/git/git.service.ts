@@ -4,10 +4,14 @@ import fs from 'fs';
 
 @Injectable()
 export class GitService {
-  cloneRepo(url: string) {
+  async cloneRepo(url: string) {
+    const path = this.validateGitHubUrlAndGetPath(url);
+    fs.rmSync(path, { recursive: true, force: true });
     // simpleGit adds overhead as it clones a repo with git metadata, history, etc.
     // consider a more straightforward alternative that would only download source files
-    return simpleGit().clone(url, this.validateGitHubUrlAndGetPath(url));
+    // TODO measure cpu/memory consumption with a big repo like https://github.com/torvalds/linux
+    await simpleGit().clone(url, path, ['--depth', '1']);
+    return path;
   }
 
   private validateGitHubUrlAndGetPath(url: string): string {
@@ -21,8 +25,6 @@ export class GitService {
       throw new BadRequestException('Github repo URL is required');
     }
 
-    const path = './repos' + parsedUrl.pathname.replace(/\/$/, '');
-    fs.rmSync(path, { recursive: true, force: true });
-    return path;
+    return './repos' + parsedUrl.pathname.replace(/\/$/, '');
   }
 }
