@@ -1,12 +1,14 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 
-@Controller()
+@Controller('api')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  @Post('scan')
+  getHello(@Body('url') url: string): Promise<string> {
+    // optional arg to preserve local repo if exists?
+    // should it support private repos? specific branch?
+    return this.appService.startScan(url);
   }
 }
