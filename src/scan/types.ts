@@ -1,7 +1,7 @@
 export enum Status {
   QUEUED = 'Queued',
   CLONING = 'Cloning Repo',
-  ANALYZING = 'Analyzing',
+  SCANNING = 'Scanning',
   COMPLETED = 'Completed',
   FAILED = 'Failed',
 }
@@ -11,4 +11,8 @@ export interface ScanStatus {
   status: Status;
   result?: string;
   error?: string;
+}
+
+export interface Vulnerability {
+  Severity: string;
 }

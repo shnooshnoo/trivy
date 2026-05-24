@@ -1,40 +1,48 @@
 import { Injectable } from '@nestjs/common';
 import { spawn } from 'child_process';
-import { createWriteStream } from 'fs';
+import { chain } from 'stream-chain';
+import { parser } from 'stream-json';
+import { pick } from 'stream-json/filters/pick.js';
+import { streamArray } from 'stream-json/streamers/stream-array.js';
+import { Vulnerability } from './scan/types';
 
 @Injectable()
 export class AppService {
-  analyzeLocalPath(path: string): Promise<string> {
+  analyzeLocalPath(path: string): Promise<Vulnerability[]> {
     return new Promise((resolve, reject) => {
-      const outputFile = 'full-scan.json';
+      const criticalVulns: Vulnerability[] = [];
       const trivy = spawn('trivy', [
         'fs',
         '--scanners',
-        'vuln,secret,config,license',
+        'vuln',
         '--format',
         'json',
         path,
       ]);
 
-      const writeStream = createWriteStream(outputFile);
-
-      // Stream stdout directly to file
-      trivy.stdout.pipe(writeStream);
-
-      trivy.on('close', (code) => {
-        if (code === 0) {
-          resolve(outputFile);
-        } else {
-          reject(new Error(`Trivy exited with code ${code}`));
+      const pipeline = chain([
+        trivy.stdout,
+        parser(),
+        pick({ filter: 'Results' }),
+        pick({ filter: /\.(Vulnerabilities)$/ }),
+        streamArray(),
+      ]);
+      pipeline.on('data', ({ value }: { value: Vulnerability }) => {
+        if (value.Severity.toLowerCase() === 'critical') {
+          criticalVulns.push(value);
         }
       });
 
-      trivy.on('error', (err) => {
-        reject(err);
+      pipeline.on('end', () => {
+        resolve(criticalVulns);
       });
 
-      writeStream.on('error', (err) => {
-        reject(err);
+      pipeline.on('error', (error) => {
+        reject(error);
+      });
+
+      trivy.on('error', (error) => {
+        reject(error);
       });
     });
   }

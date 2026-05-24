@@ -21,13 +21,12 @@ export class ScanProcessor extends WorkerHost {
 
   async process(job: Job<ScanJob>) {
     const { url } = job.data;
-
     await job.updateProgress(30);
+
     const localPath = await this.gitService.cloneRepo(url);
-
     await job.updateProgress(60);
-    const result = await this.appService.analyzeLocalPath(localPath);
 
+    const result = await this.appService.analyzeLocalPath(localPath);
     await job.updateProgress(100);
     this.gitService.cleanUpRepo(url);
     return { scanId: job.id, result };

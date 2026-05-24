@@ -69,5 +69,5 @@ function getStatusByProgress(progress: JobProgress): Status {
   if (progress < 60) {
     return Status.CLONING;
   }
-  return Status.ANALYZING;
+  return Status.SCANNING;
 }
