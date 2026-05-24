@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { GitService } from '../git/git.service';
-import { AppService } from '../app.service';
+import { ScanService } from './scan.service';
 
 export interface ScanJob {
   scanId: number;
@@ -14,7 +14,7 @@ export interface ScanJob {
 export class ScanProcessor extends WorkerHost {
   constructor(
     private readonly gitService: GitService,
-    private readonly appService: AppService,
+    private readonly scanService: ScanService,
   ) {
     super();
   }
@@ -26,7 +26,7 @@ export class ScanProcessor extends WorkerHost {
     const localPath = await this.gitService.cloneRepo(url);
     await job.updateProgress(60);
 
-    const result = await this.appService.analyzeLocalPath(localPath);
+    const result = await this.scanService.scanLocalPath(localPath);
     await job.updateProgress(100);
     this.gitService.cleanUpRepo(url);
     return { scanId: job.id, result };

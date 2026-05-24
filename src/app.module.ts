@@ -1,6 +1,4 @@
-import { AppController } from './app.controller';
 import { Module } from '@nestjs/common';
-import { AppService } from './app.service';
 import { GitModule } from './git/git.module';
 import { BullModule } from '@nestjs/bullmq';
 import { ScanModule } from './scan/scan.module';
@@ -16,7 +14,5 @@ import { ScanModule } from './scan/scan.module';
     GitModule,
     ScanModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

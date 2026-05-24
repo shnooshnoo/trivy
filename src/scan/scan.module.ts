@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ScanProcessor } from './scan.processor';
-import { ScanStatusService } from './scan-status.service';
+import { ScanService } from './scan.service';
 import { GitModule } from '../git/git.module';
-import { AppService } from '../app.service';
+import { ScanController } from './scan.controller';
 
 @Module({
   imports: [
@@ -12,7 +12,8 @@ import { AppService } from '../app.service';
     }),
     GitModule,
   ],
-  providers: [ScanProcessor, ScanStatusService, AppService],
-  exports: [BullModule, ScanStatusService],
+  providers: [ScanProcessor, ScanService],
+  controllers: [ScanController],
+  exports: [BullModule, ScanService],
 })
 export class ScanModule {}

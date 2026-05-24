@@ -5,11 +5,16 @@ import {
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { ScanStatus, Status } from './types';
 import { JobProgress } from 'bullmq/dist/esm/types/job-progress';
+import { spawn } from 'child_process';
+import { chain } from 'stream-chain';
+import { parser } from 'stream-json';
+import { pick } from 'stream-json/filters/pick.js';
+import { streamArray } from 'stream-json/streamers/stream-array.js';
+import { ScanStatus, Status, Vulnerability } from './types';
 
 @Injectable()
-export class ScanStatusService {
+export class ScanService {
   constructor(
     @InjectQueue('scan')
     private scanQueue: Queue<{ url: string }, { result: string }>,
@@ -27,6 +32,45 @@ export class ScanStatusService {
       scanId: job.id,
       status: Status.QUEUED,
     };
+  }
+
+  scanLocalPath(path: string): Promise<Vulnerability[]> {
+    return new Promise((resolve, reject) => {
+      const criticalVulns: Vulnerability[] = [];
+      const trivy = spawn('trivy', [
+        'fs',
+        '--scanners',
+        'vuln',
+        '--format',
+        'json',
+        path,
+      ]);
+
+      const pipeline = chain([
+        trivy.stdout,
+        parser(),
+        pick({ filter: 'Results' }),
+        pick({ filter: /\.(Vulnerabilities)$/ }),
+        streamArray(),
+      ]);
+      pipeline.on('data', ({ value }: { value: Vulnerability }) => {
+        if (value.Severity.toLowerCase() === 'critical') {
+          criticalVulns.push(value);
+        }
+      });
+
+      pipeline.on('end', () => {
+        resolve(criticalVulns);
+      });
+
+      pipeline.on('error', (error) => {
+        reject(error);
+      });
+
+      trivy.on('error', (error) => {
+        reject(error);
+      });
+    });
   }
 
   async getScanStatus(scanId: string): Promise<ScanStatus> {

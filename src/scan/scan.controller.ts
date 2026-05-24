@@ -1,21 +1,21 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ScanStatusService } from './scan/scan-status.service';
+import { ScanService } from './scan.service';
 
-@Controller('api')
-export class AppController {
-  constructor(private readonly scanStatusService: ScanStatusService) {}
+@Controller('api/scan')
+export class ScanController {
+  constructor(private readonly scanService: ScanService) {}
 
-  @Post('scan')
+  @Post('')
   async startScan(
     @Body('url') url: string,
   ): Promise<{ scanId: string; status: string }> {
     // optional arg to preserve local repo if exists?
     // should it support private repos? specific branch?
-    return this.scanStatusService.createScan(url);
+    return this.scanService.createScan(url);
   }
 
-  @Get('scan/:scanId')
+  @Get('/:scanId')
   async getScanStatus(@Param('scanId') scanId: string) {
-    return this.scanStatusService.getScanStatus(scanId);
+    return this.scanService.getScanStatus(scanId);
   }
 }
