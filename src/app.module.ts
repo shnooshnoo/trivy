@@ -7,8 +7,8 @@ import { ScanModule } from './scan/scan.module';
   imports: [
     BullModule.forRoot({
       connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
+        host: 'localhost',
+        port: 6379,
       },
     }),
     GitModule,
